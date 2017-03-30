@@ -3,11 +3,11 @@ defmodule Pay.Mixfile do
 
   def project do
     [app: :pay,
-     version: "0.1.3",
-     elixir: "~> 1.0",
+     version: "0.2.0",
+     elixir: "~> 1.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
-     deps: deps]
+     deps: deps()]
   end
 
   # Configuration for the OTP application

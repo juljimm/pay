@@ -1,4 +1,4 @@
-defmodule Paypal.Payment do
+defmodule Pay.Paypal.Payment do
   @moduledoc """
   This module is responsible for handle all payment calls to paypal.
   The sctruct has the following keys:
@@ -9,13 +9,12 @@ defmodule Paypal.Payment do
   update: used at the Payment.update protocol.
   """
   @derive [Poison.Encoder]
-  defstruct intent: nil, payer: nil, transactions: nil, id: nil, op: nil, update: nil, redirect_urls: nil
-  @type p :: %Paypal.Payment{intent: String.t, payer: any, transactions: list(any), redirect_urls: any,
-                            id: integer, op: String.t, update: list(any)}
+  defstruct intent: nil, experience_profile_id: nil, payer: nil, transactions: nil, id: nil, op: nil, update: nil, redirect_urls: nil
+  @type p :: %Pay.Paypal.Payment{intent: String.t, payer: any, transactions: list(any), redirect_urls: any, id: integer, op: String.t, update: list(any)}
 
 end
 
-defimpl Payment, for: Paypal.Payment do
+defimpl Pay.Payment, for: Pay.Paypal.Payment do
 
   @doc """
     Function to create a payment with Paypal. Receives a Dict with all information that is required by
@@ -27,31 +26,14 @@ defimpl Payment, for: Paypal.Payment do
     Returns a Task.
   """
   def create_payment(payment) do
-    Task.async(fn -> do_create_payment(payment) end)
-  end
-
-  defp do_create_payment(payment) do
-    string_payment = format_create_payment_request  Poison.encode!(payment)
-    IO.inspect(string_payment)
-    HTTPoison.post(Paypal.Config.url <> "/payments/payment", string_payment,
-      Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity)
-    |> Paypal.Config.parse_response
-  end
-
-  defp format_create_payment_request(payment) do
-    String.replace(payment, ~s("op":null,), "")
-    |> String.replace(~s("update":null,), "")
+    Task.async(fn -> Pay.Paypal.Utils.post("/payments/payment", payment) end)
   end
 
   @doc """
   Function to get the status of the payment at Paypal. It returns the API JSON as a dict.
   It receives a Paypal.Payment struct with id.
   """
-  def get_status(payment) do
-    HTTPoison.get(Paypal.Config.url <> "/payments/payment/" <> payment.id, Paypal.Authentication.headers,
-      timeout: :infinity, recv_timeout: :infinity)
-    |> Paypal.Config.parse_response
-  end
+  def get_status(payment), do: Pay.Paypal.Utils.get("/payments/payment/" <> payment.id)
 
   @doc """
   Function to update payment fields. You have to pass in the update key a list with a HashDict with following keys:
@@ -63,21 +45,14 @@ defimpl Payment, for: Paypal.Payment do
   It returns a PID for a Task.
   """
   def update_payment(payment) do
-      Task.async fn -> do_update_payment(payment) end
+    Task.async(fn -> Pay.Paypal.Utils.post("/payments/payment/#{payment.id}", payment.update) end)
   end
-  def do_update_payment(payment) do
-    HTTPoison.patch(Paypal.Config.url <>  "/payments/payment/" <> payment.id, Poison.encode!(payment.update),
-      Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity)
-      |> Paypal.Config.parse_response
-  end
+
   @doc """
   Use this call to get a list of payments in any state (created, approved, failed, etc.). The payments returned are the payments made to the merchant making the call.
   You should pass to this function just a empty Paypal.Payment like %Paypal.Payment{}
   """
-  def get_payments(_payment) do
-    HTTPoison.get(Paypal.Config.url <> "/payments/payment/", Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity)
-    |> Paypal.Config.parse_response
-  end
+  def get_payments(_payment), do: Pay.Paypal.Utils.get("/payments/payment/")
 
   @doc """
   Use this call to execute (complete) a PayPal payment that has been approved by the payer.
@@ -86,14 +61,12 @@ defimpl Payment, for: Paypal.Payment do
 
   """
   def execute_payment(payment) do
-    Task.async fn -> do_execute_payment(payment) end
-  end
-
-  defp do_execute_payment(payment) do
-    HTTPoison.post(Paypal.Config.url <> "/payments/payment/#{payment.id}/execute",
-      Poison.encode!(%{payer_id: payment.payer.id}),
-      Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity)
-    |> Paypal.Config.parse_response
+    Task.async(fn ->
+      Pay.Paypal.Utils.post(
+        "/payments/payment/#{payment.id}/execute",
+        %{payer_id: payment.payer.id}
+      )
+    end)
   end
 
   @doc """

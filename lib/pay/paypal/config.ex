@@ -1,4 +1,5 @@
-defmodule Paypal.Config do
+defmodule Pay.Paypal.Config do
+
   @api_url "https://api.paypal.com/v1"
   @sand_box_url "https://api.sandbox.paypal.com/v1"
 
@@ -8,7 +9,6 @@ defmodule Paypal.Config do
       _ -> @api_url
     end
   end
-
 
   def parse_response(response) do
     case response do
@@ -20,6 +20,6 @@ defmodule Paypal.Config do
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:nok, reason}
     end
-
   end
+
 end
