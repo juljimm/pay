@@ -42,7 +42,7 @@ defmodule Pay.Paypal.Authentication do
       basic_headers(),
       [ hackney: hackney ]
     )
-    |> Pay.Paypal.Config.parse_response
+    |> Pay.Paypal.Utils.parse_response
     |> parse_token
     |> update_token
   end

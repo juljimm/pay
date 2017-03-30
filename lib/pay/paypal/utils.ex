@@ -6,7 +6,7 @@ defmodule Pay.Paypal.Utils do
       encode(struct),
       Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
     )
-    |> Pay.Paypal.Config.parse_response
+    |> parse_response
   end
 
   def put(path, struct \\ %{}) do
@@ -15,7 +15,6 @@ defmodule Pay.Paypal.Utils do
       encode(struct),
       Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
     )
-    |> Pay.Paypal.Config.parse_response
   end
 
   def delete(path) do
@@ -23,7 +22,6 @@ defmodule Pay.Paypal.Utils do
       Pay.Paypal.Config.url <> path,
       Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
     )
-    |> Pay.Paypal.Config.parse_response
   end
 
   def get(path) do
@@ -31,7 +29,7 @@ defmodule Pay.Paypal.Utils do
       Pay.Paypal.Config.url <> path,
       Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
     )
-    |> Pay.Paypal.Config.parse_response
+    |> parse_response
   end
 
   #
@@ -46,6 +44,17 @@ defmodule Pay.Paypal.Utils do
     text
     |> String.replace(~s("op":null,), "")
     |> String.replace(~s("update":null,), "")
+  end
+
+  def parse_response(response) do
+    case response do
+      {:ok, %HTTPoison.Response{status_code: 401, body: body, headers: _headers}} ->
+        {:ok, response} = Poison.decode body
+        {:auth_error, response}
+      {:ok, %HTTPoison.Response{status_code: 204, headers: _headers}} -> {:ok, :noop}
+      {:ok, %HTTPoison.Response{status_code: _, body: body, headers: _headers}} -> {:ok, Poison.decode! body}
+      {:error, %HTTPoison.Error{reason: reason}} -> {:nok, reason}
+    end
   end
 
 end
