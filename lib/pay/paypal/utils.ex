@@ -9,6 +9,23 @@ defmodule Pay.Paypal.Utils do
     |> Pay.Paypal.Config.parse_response
   end
 
+  def put(path, struct \\ %{}) do
+    HTTPoison.put(
+      Pay.Paypal.Config.url <> path,
+      encode(struct),
+      Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
+    )
+    |> Pay.Paypal.Config.parse_response
+  end
+
+  def delete(path) do
+    HTTPoison.delete(
+      Pay.Paypal.Config.url <> path,
+      Pay.Paypal.Authentication.headers, timeout: :infinity, recv_timeout: :infinity
+    )
+    |> Pay.Paypal.Config.parse_response
+  end
+
   def get(path) do
     HTTPoison.get(
       Pay.Paypal.Config.url <> path,
