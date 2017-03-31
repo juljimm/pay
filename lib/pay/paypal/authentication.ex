@@ -1,5 +1,4 @@
 defmodule Pay.Paypal.Authentication do
-  use Timex
 
   @moduledoc """
   This module is responsible to authenticate the lib with paypal.
@@ -29,7 +28,7 @@ defmodule Pay.Paypal.Authentication do
 
   defp is_expired do
     %{token: _, expires_in: expires } = Agent.get(:token, &(&1))
-    :os.timestamp |> Duration.from_erl |> Duration.to_seconds > expires
+    :os.timestamp |> Timex.Duration.from_erl |> Timex.Duration.to_seconds > expires
   end
 
   defp get_env(key), do: Application.get_env(:pay, :paypal)[key]
@@ -48,7 +47,7 @@ defmodule Pay.Paypal.Authentication do
   end
 
   defp update_token({:ok, access_token, expires_in}) do
-    now = :os.timestamp |> Duration.from_erl |> Duration.to_seconds
+    now = :os.timestamp |> Timex.Duration.from_erl |> Timex.Duration.to_seconds
     Agent.update(:token, fn _ -> %{token: access_token, expires_in: now + expires_in }  end)
   end
 
